@@ -1,0 +1,75 @@
+
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+
+/// @brief Logs errors, prints a user message to stderr
+/// @param message The message
+/// @param line The line of the error, use __LINE__
+/// @param supress Supress user message, or just log
+void logErr(const char message[], int line, bool supress)
+{
+    FILE *fptr;
+    fptr = fopen("errout.txt", "a");
+    fprintf(fptr, "%s\t At line: %d\n", message, line);
+    fclose(fptr);
+    if (!supress)
+    {
+        fprintf(stderr, "Error at line %d, logged\n", line);
+    }
+}
+
+/// @brief Prints a debug message to stderr
+/// @param message The message
+void debugPrint(const char message[])
+{
+    fprintf(stderr, "%s\n", message);
+}
+
+/// @brief Throws fatal error, exits program
+/// @param message The message to display
+/// @param line use __LINE__
+void throwErr(const char message[], int line)
+{
+    fprintf(stderr, "Fatal error\n");
+    logErr(message, line, false);
+    exit(1);
+}
+
+/// @brief Prints Errors to stderr
+/// @param message The message
+/// @param line Use __LINE__
+/// @param supressLog Supress logging
+void printErr(const char message[], int line, bool supressLog)
+{
+    fprintf(stderr,"%s\n", message);
+    if (!supressLog)
+    {
+        logErr(message, line, true);
+    }
+}
+
+
+
+
+int main()
+{
+	//Socket Filedescriptor
+	int localFileDesc;
+	//Server adress
+	struct sockaddr_in localAdress;
+
+	//Create socket
+	if((localFileDesc=socket(AF_INET,SOCK_STREAM, 0))<0)
+	{
+		throwErr("Socket did not start successfully :(", __LINE__);
+	}
+	localAdress.sin_family = AF_INET;
+	printf("It worked? :O\n");
+	throwErr("Oops, not implemented :p", __LINE__);
+	return 0;
+}
