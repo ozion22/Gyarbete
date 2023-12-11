@@ -7,6 +7,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+#define PORT 19
+
 /// @brief Logs errors, prints a user message to stderr
 /// @param message The message
 /// @param line The line of the error, use __LINE__
@@ -46,30 +48,30 @@ void throwErr(const char message[], int line)
 /// @param supressLog Supress logging
 void printErr(const char message[], int line, bool supressLog)
 {
-    fprintf(stderr,"%s\n", message);
+    fprintf(stderr, "%s\n", message);
     if (!supressLog)
     {
         logErr(message, line, true);
     }
 }
 
-
-
-
 int main()
 {
-	//Socket Filedescriptor
-	int localFileDesc;
-	//Server adress
-	struct sockaddr_in localAdress;
+    // Socket Filedescriptor
+    int localFileDesc;
+    // Server adress
+    struct sockaddr_in localAdress;
 
-	//Create socket
-	if((localFileDesc=socket(AF_INET,SOCK_STREAM, 0))<0)
-	{
-		throwErr("Socket did not start successfully :(", __LINE__);
-	}
-	localAdress.sin_family = AF_INET;
-	printf("It worked? :O\n");
-	throwErr("Oops, not implemented :p", __LINE__);
-	return 0;
+    // Create socket
+    if ((localFileDesc = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    {
+        throwErr("Socket did not start successfully :(", __LINE__);
+    }
+    localAdress.sin_family = AF_INET;
+    localAdress.sin_addr.s_addr = INADDR_ANY;
+    localAdress.sin_port = htons(PORT);
+
+    printf("It worked? :O\n");
+    throwErr("Oops, not implemented :p", __LINE__);
+    return 0;
 }
