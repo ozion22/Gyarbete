@@ -15,21 +15,21 @@
 /// @param supress Supress user message, or just log
 void logErr(const char message[], int line, bool supress)
 {
-    FILE *fptr;
-    fptr = fopen("errout.txt", "a");
-    fprintf(fptr, "%s\t At line: %d\n", message, line);
-    fclose(fptr);
-    if (!supress)
-    {
-        fprintf(stderr, "Error at line %d, logged\n", line);
-    }
+	FILE *fptr;
+	fptr = fopen("errout.txt", "a");
+	fprintf(fptr, "%s\t At line: %d\n", message, line);
+	fclose(fptr);
+	if (!supress)
+	{
+		fprintf(stderr, "Error at line %d, logged\n", line);
+	}
 }
 
 /// @brief Prints a debug message to stderr
 /// @param message The message
 void debugPrint(const char message[])
 {
-    fprintf(stderr, "%s\n", message);
+	fprintf(stderr, "%s\n", message);
 }
 
 /// @brief Throws fatal error, exits program
@@ -37,9 +37,9 @@ void debugPrint(const char message[])
 /// @param line use __LINE__
 void throwErr(const char message[], int line)
 {
-    fprintf(stderr, "Fatal error\n");
-    logErr(message, line, false);
-    exit(1);
+	fprintf(stderr, "Fatal error\n");
+	logErr(message, line, false);
+	exit(1);
 }
 
 /// @brief Prints Errors to stderr
@@ -48,30 +48,32 @@ void throwErr(const char message[], int line)
 /// @param supressLog Supress logging
 void printErr(const char message[], int line, bool supressLog)
 {
-    fprintf(stderr, "%s\n", message);
-    if (!supressLog)
-    {
-        logErr(message, line, true);
-    }
+	fprintf(stderr, "%s\n", message);
+	if (!supressLog)
+	{
+		logErr(message, line, true);
+	}
 }
 
 int main()
 {
-    // Socket Filedescriptor
-    int localFileDesc;
-    // Server adress
-    struct sockaddr_in localAdress;
-
-    // Create socket
-    if ((localFileDesc = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-    {
-        throwErr("Socket did not start successfully :(", __LINE__);
-    }
-    localAdress.sin_family = AF_INET;
-    localAdress.sin_addr.s_addr = INADDR_ANY;
-    localAdress.sin_port = htons(PORT);
-
-    printf("It worked? :O\n");
-    throwErr("Oops, not implemented :p", __LINE__);
-    return 0;
+	initsocket(PORT);
+	printf("It worked? :O\n");
+	int localFileDesc;
+	// Server adress
+	struct sockaddr_in localAdress;
+	// Create socket
+	if ((localFileDesc = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+	{
+		throwErr("Socket start Fail.", __LINE__);
+	}
+	localAdress.sin_family = AF_INET;
+	localAdress.sin_addr.s_addr = INADDR_ANY;
+	localAdress.sin_port = htons(PORT);
+	if (bind(localFileDesc, (struct sockaddr *)&localAdress, sizeof(localAdress)) < 0)
+	{
+		throwErr("Bind failed", __LINE__);
+	}
+	throwErr("End of draft", __LINE__);
+	return 0;
 }
