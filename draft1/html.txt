@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>Test</title>
+	<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+	<div id="top">
+		<h1>
+			Tim's testpage
+		</h1>
+		<p>
+			This is a test page. Do not read into it's content too much :p
+		</p>
+	</div>
+	<footer>
+		<a href="#top">
+			Back to the top
+		</a>
+	</footer>
+</body>
