@@ -7,7 +7,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-#define PORT 19
+#define PORT 8080
 
 /// @brief Logs errors, prints a user message to stderr
 /// @param message The message
@@ -55,9 +55,39 @@ void printErr(const char message[], int line, bool supressLog)
 	}
 }
 
-int main()
+char *getHtml(char *filename)
 {
-	initsocket(PORT);
+	int buffer=1048576;
+	char *rawText;
+	rawText = malloc(buffer);
+	FILE *docPointer;
+	docPointer = fopen(filename, "r");
+	if(docPointer == NULL)
+	{
+		throwErr("HTML file not Found!\n", __LINE__);
+	}
+	fgets(rawText, sizeof(rawText), docPointer);
+	return rawText;
+}
+
+int main(int argc, char *argv[])
+{
+	char *html;
+	switch (argc)
+	{
+	case 1:
+		printf("Too few arguments!\n");
+		printf("Usage: ./server <filename/path to html doc in txt format>\n");
+		exit(1);
+		break;
+	case 2:
+		html=getHtml(argv[1]);
+		break;
+	default:
+		printf("Usage: ./server <filename/path to html doc in txt format>\n");
+		exit(1);
+	}
+
 	printf("It worked? :O\n");
 	int localFileDesc;
 	// Server adress
@@ -74,6 +104,25 @@ int main()
 	{
 		throwErr("Bind failed", __LINE__);
 	}
-	throwErr("End of draft", __LINE__);
+	if(listen(localFileDesc, 10) < 0)
+	{
+		throwErr("Listen failed.", __LINE__);
+	}
+	debugPrint("Server listening, socket + bind success.");
+
+	while(1)
+	{
+		int incomingFileDesc,n;
+		struct sockaddr_in incomingAdress;
+		int incomingLenght=sizeof(incomingAdress);
+		printf("Waiting for connection... %d\n", n);
+		incomingFileDesc=accept(localFileDesc, (struct sockaddr *) &incomingAdress, (socklen_t *)&incomingLenght);
+		if(incomingFileDesc < 0)
+		{
+			printf("Acc. Fail");
+		}
+		send(incomingFileDesc, html, strlen(html), 0);
+		n++;
+	}
 	return 0;
 }

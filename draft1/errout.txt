@@ -1,2 +1,1 @@
-Oops, not implemented :p	 At line: 83
-Bind failed	 At line: 75
+End of draft	 At line: 76
