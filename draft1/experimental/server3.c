@@ -1,15 +1,15 @@
+#include <errno.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
-#include <errno.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #define PORT 8080
-#define BUFFER 2048
-char html[1024];
+#define BUFFERSIZE 10000
+char *content;
 
 /// @brief Logs errors, prints a user message to stderr
 /// @param message The message
@@ -40,8 +40,8 @@ void debugPrint(const char message[])
 void throwErr(const char message[], int line)
 {
 	fprintf(stderr, "Fatal error\n");
-	printf("Errno: %s\n", strerror(errno));
 	logErr(message, line, false);
+	printf("Errno: %s\n", strerror(errno));
 	exit(1);
 }
 
@@ -58,20 +58,31 @@ void printErr(const char message[], int line, bool supressLog)
 	}
 }
 
-void getHtml(char *filename)
+void getFile(char *filename)
 {
 	FILE *docPointer;
+	char *buffer;
+	int readcounter=0;
+	buffer = malloc(BUFFERSIZE);
 	docPointer = fopen(filename, "r");
 	if(docPointer == NULL)
 	{
 		throwErr("HTML file not Found!\n", __LINE__);
 	}
-	fgets(html, sizeof(char)*1024, docPointer);
-	printf("%s\n", html);
-}
-
-void checkValidGET(char *request)
-{
+	while(fgets(buffer, sizeof(char)*BUFFERSIZE, docPointer) != NULL)
+	{
+		if(readcounter==0)
+		{
+			content = malloc(strlen(buffer)*sizeof(char));
+			strcpy(content, buffer);
+			readcounter++;
+			continue;
+		}
+		content = realloc(content,strlen(content)*sizeof(char)+1+strlen(buffer)*sizeof(char));
+		strcat(content, buffer);
+		readcounter++;
+	}
+	printf("\e[0;33m" "%s\n" "\e[0m", content);
 }
 
 int main(int argc, char *argv[])
@@ -84,15 +95,13 @@ int main(int argc, char *argv[])
 		exit(1);
 		break;
 	case 2:
-		getHtml(argv[1]);
+		getFile(argv[1]);
 		break;
 	default:
 		printf("Usage: ./server <filename/path to html doc in txt format>\n");
 		exit(1);
 	}
 
-	printf("It worked? :O\n");
-	printf("%s", html);
 	int localFileDesc;
 	// Server adress
 	struct sockaddr_in localAdress;
@@ -115,30 +124,33 @@ int main(int argc, char *argv[])
 	debugPrint("Server listening, socket + bind success.");
 	struct sockaddr_in addr;
     	socklen_t addr_len = sizeof(addr);
-    	if (getsockname(localFileDesc, (struct sockaddr *)&addr, &addr_len) == 0)
-	{
-       		printf("Server IP address: %s\n", inet_ntoa(addr.sin_addr));
-    	}
-	else {
-        	perror("Error getting server IP address");
-    	}
-
+    	if (getsockname(localFileDesc, (struct sockaddr *)&addr, &addr_len) == 0) 
+		{
+        		printf("Server IP address: %s\n", inet_ntoa(addr.sin_addr));
+    		}
+		else {
+        		perror("Error getting server IP address");
+    		}
 	while(1)
 	{
 		int incomingFileDesc,n;
 		char *receivedRequest;
-		receivedRequest = malloc(BUFFER);
+		receivedRequest = malloc(BUFFERSIZE);
 		struct sockaddr_in incomingAdress;
 		int incomingLenght=sizeof(incomingAdress);
 		printf("Waiting for connection... %d\n", n);
 		incomingFileDesc=accept(localFileDesc, (struct sockaddr *) &incomingAdress, (socklen_t *)&incomingLenght);
-		read(incomingFileDesc, receivedRequest, BUFFER-1);
-		printf("%s\n", receivedRequest);
+		read(incomingFileDesc, receivedRequest, BUFFERSIZE-1);
 		if(incomingFileDesc < 0)
 		{
 			printf("Acc. Fail");
 		}
-		send(incomingFileDesc, html, strlen(html), 0);
+		else
+		{
+			printf("Connection ACC.\n");
+		}
+		printf("\e[0;37m""%s"  "\e[0m", receivedRequest);
+		send(incomingFileDesc, content, strlen(content), 0);
 		n++;
 	}
 	return 0;
