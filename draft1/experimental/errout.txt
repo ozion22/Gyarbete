@@ -14,3 +14,5 @@ Bind failed	 At line: 118
 Bind failed	 At line: 118
 Bind failed	 At line: 118
 Bind failed	 At line: 118
+HTML file not Found!
+	 At line: 70
