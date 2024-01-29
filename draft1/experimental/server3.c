@@ -9,9 +9,23 @@
 #include <arpa/inet.h>
 #define PORT 8080
 #define BUFFERSIZE 10000
+
+#define HTTP_OK 200
+#define HTTP_NOTFOUND 404
+#define HTTP_VERSION "HTTP/1.1"
+
+
 char *content;			//The buffer used for text-type data, mostly html 
 int *binBuffer; 		//The buffer used for binary data, such as images
 			   	//NOTE: Use ONLY for images, html cannot be sent in binary.
+char *httpHeader;		//Buffer holding the http response header, append before sending data over http
+
+struct GETResponse{
+	int contentLenght;
+	int statusCode;
+	char *contentType;
+};
+
 
 /// @brief Logs errors, prints a user message to stderr
 /// @param message The message
@@ -104,6 +118,18 @@ void getFile(char *filename)	//Puts file on either the binary or char buffer bas
 	//TODO Make dynamic, supporting binary encodings and switching buffer according
 }
 
+void buildHeader(char *filetype, char *filename, char *requestType)
+{
+	switch(requestType)
+	{
+		case "GET":
+			struct GETResponse Builtheader;
+			Builtheader.content-type = filetype;
+			Builtheader.content-lenght = sizeof(content);
+			break;
+
+	}
+}
 
 int main(int argc, char *argv[])
 {
