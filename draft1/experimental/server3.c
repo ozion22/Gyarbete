@@ -9,7 +9,9 @@
 #include <arpa/inet.h>
 #define PORT 8080
 #define BUFFERSIZE 10000
-char *content;
+char *content;			//The buffer used for text-type data, mostly html 
+int *binBuffer; 		//The buffer used for binary data, such as images
+			   	//NOTE: Use ONLY for images, html cannot be sent in binary.
 
 /// @brief Logs errors, prints a user message to stderr
 /// @param message The message
@@ -58,7 +60,22 @@ void printErr(const char message[], int line, bool supressLog)
 	}
 }
 
-void getFile(char *filename)
+void printServerIP(int localFileDesc)
+{
+
+	struct sockaddr_in addr;
+    	socklen_t addr_len = sizeof(addr);
+    	if (getsockname(localFileDesc, (struct sockaddr *)&addr, &addr_len) == 0) 
+	{
+		printf("Server IP address: %s\n", inet_ntoa(addr.sin_addr));
+    	}
+	else {
+        	perror("Error getting server IP address");
+    	}
+}
+
+void getFile(char *filename)	//Puts file on either the binary or char buffer based on suffixes
+				//TODO Learn regex and pattern-match based on suffix
 {
 	FILE *docPointer;
 	char *buffer;
@@ -83,7 +100,10 @@ void getFile(char *filename)
 		readcounter++;
 	}
 	printf("\e[0;33m" "%s\n" "\e[0m", content);
+	free(buffer);
+	//TODO Make dynamic, supporting binary encodings and switching buffer according
 }
+
 
 int main(int argc, char *argv[])
 {
@@ -122,15 +142,7 @@ int main(int argc, char *argv[])
 		throwErr("Listen failed.", __LINE__);
 	}
 	debugPrint("Server listening, socket + bind success.");
-	struct sockaddr_in addr;
-    	socklen_t addr_len = sizeof(addr);
-    	if (getsockname(localFileDesc, (struct sockaddr *)&addr, &addr_len) == 0) 
-		{
-        		printf("Server IP address: %s\n", inet_ntoa(addr.sin_addr));
-    		}
-		else {
-        		perror("Error getting server IP address");
-    		}
+	printServerIP();
 	while(1)
 	{
 		int incomingFileDesc,n;
@@ -150,7 +162,7 @@ int main(int argc, char *argv[])
 			printf("Connection ACC.\n");
 		}
 		printf("\e[0;37m""%s"  "\e[0m", receivedRequest);
-		send(incomingFileDesc, content, strlen(content), 0);
+		send(incomingFileDesc, content, strlen(content), 0); //TODO Refactor
 		n++;
 	}
 	return 0;
