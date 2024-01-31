@@ -188,6 +188,9 @@ int main(int argc, char *argv[])
 			printf("Connection ACC.\n");
 		}
 		printf("\e[0;37m""%s"  "\e[0m", receivedRequest);
+
+		
+
 		send(incomingFileDesc, content, strlen(content), 0); //TODO Refactor
 		n++;
 	}
