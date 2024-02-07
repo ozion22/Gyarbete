@@ -10,8 +10,8 @@
 #define PORT 8080
 #define BUFFERSIZE 10000
 
-#define HTTP_OK 200
-#define HTTP_NOTFOUND 404
+#define HTTP_OK "200"
+#define HTTP_NOTFOUND "404"
 #define HTTP_VERSION "HTTP/1.1"
 
 
@@ -19,13 +19,6 @@ char *content;			//The buffer used for text-type data, mostly html
 int *binBuffer; 		//The buffer used for binary data, such as images
 			   	//NOTE: Use ONLY for images, html cannot be sent in binary.
 char *httpHeader;		//Buffer holding the http response header, append before sending data over http
-
-struct GETResponse{
-	int contentLenght;
-	int statusCode;
-	char *contentType;
-};
-
 
 /// @brief Logs errors, prints a user message to stderr
 /// @param message The message
@@ -88,36 +81,49 @@ void printServerIP(int localFileDesc)
     	}
 }
 
+
+int getFileExtentionIndex(char *pathToFile)
+{
+	return strrchr(pathToFile, '.');
+}
+
+
 void getFile(char *filename)	//Puts file on either the binary or char buffer based on suffixes
 				//TODO Learn regex and pattern-match based on suffix
 {
 	FILE *docPointer;
 	char *buffer;
+	char *extention = strrchr(filename, '.');
 	int readcounter=0;
 	buffer = malloc(BUFFERSIZE);
 	docPointer = fopen(filename, "r");
 	if(docPointer == NULL)
 	{
-		throwErr("HTML file not Found!\n", __LINE__);
+		throwErr("404 File not Found!\n", __LINE__);
 	}
-	while(fgets(buffer, sizeof(char)*BUFFERSIZE, docPointer) != NULL)
+
+	if(strcmp(extention, "html") == 0)
 	{
-		if(readcounter==0)
+		while(fgets(buffer, sizeof(char)*BUFFERSIZE, docPointer) != NULL)
 		{
-			content = malloc(strlen(buffer)*sizeof(char));
-			strcpy(content, buffer);
+			if(readcounter==0)
+			{
+				content = malloc(strlen(buffer)*sizeof(char));
+				strcpy(content, buffer);
+				readcounter++;
+				continue;
+			}
+			content = realloc(content,strlen(content)*sizeof(char)+1+strlen(buffer)*sizeof(char));
+			strcat(content, buffer);
 			readcounter++;
-			continue;
 		}
-		content = realloc(content,strlen(content)*sizeof(char)+1+strlen(buffer)*sizeof(char));
-		strcat(content, buffer);
-		readcounter++;
 	}
-	printf("\e[0;33m" "%s\n" "\e[0m", content);
+	if((strcmp(extention, "jpg") == 0) || (strcmp(extention, "png")==0) || (strcmp(extention, "webp")==0))
 	free(buffer);
 	//TODO Make dynamic, supporting binary encodings and switching buffer according
 }
 
+/*	WARNING: DEPRECATED
 void buildHeader(char *filetype, char *filename, char *requestType)
 {
 	switch(requestType)
@@ -130,10 +136,11 @@ void buildHeader(char *filetype, char *filename, char *requestType)
 
 	}
 }
+*/
 
 int main(int argc, char *argv[])
 {
-	switch (argc)
+	switch (argc)	//Bars unintenden usage
 	{
 	case 1:
 		printf("Too few arguments!\n");
@@ -168,17 +175,18 @@ int main(int argc, char *argv[])
 		throwErr("Listen failed.", __LINE__);
 	}
 	debugPrint("Server listening, socket + bind success.");
-	printServerIP();
+	printServerIP();	//Prints the server IP
 	while(1)
 	{
 		int incomingFileDesc,n;
-		char *receivedRequest;
+		char *receivedRequest;				//Sting containing received
 		receivedRequest = malloc(BUFFERSIZE);
 		struct sockaddr_in incomingAdress;
 		int incomingLenght=sizeof(incomingAdress);
 		printf("Waiting for connection... %d\n", n);
-		incomingFileDesc=accept(localFileDesc, (struct sockaddr *) &incomingAdress, (socklen_t *)&incomingLenght);
-		read(incomingFileDesc, receivedRequest, BUFFERSIZE-1);
+		incomingFileDesc=accept(localFileDesc, (struct sockaddr *) &incomingAdress, (socklen_t *)&incomingLenght);	//Accepts incoming connections
+																//Minds to incomingFileDesc
+		read(incomingFileDesc, receivedRequest, BUFFERSIZE-1);	//Reads the data received into the receivedRequest buffer
 		if(incomingFileDesc < 0)
 		{
 			printf("Acc. Fail");
@@ -187,11 +195,9 @@ int main(int argc, char *argv[])
 		{
 			printf("Connection ACC.\n");
 		}
-		printf("\e[0;37m""%s"  "\e[0m", receivedRequest);
-
-		
-
-		send(incomingFileDesc, content, strlen(content), 0); //TODO Refactor
+		printf("\e[0;37m""%s"  "\e[0m", receivedRequest);	//Prints out the incoming request
+		send(incomingFileDesc, content, strlen(content), 0); 	//TODO Refactor
+								     	//Currently brute-forces the html doc
 		n++;
 	}
 	return 0;
