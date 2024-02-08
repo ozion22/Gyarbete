@@ -101,7 +101,6 @@ void getFile(char *filename)	//Puts file on either the binary or char buffer bas
 	{
 		throwErr("404 File not Found!\n", __LINE__);
 	}
-
 	if(strcmp(extention, "html") == 0)
 	{
 		while(fgets(buffer, sizeof(char)*BUFFERSIZE, docPointer) != NULL)
