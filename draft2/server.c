@@ -16,9 +16,11 @@
 #define HTTP_GET 1
 
 char *content;			//The buffer used for text-type data, mostly html 
+/*
 int *binBuffer; 		//The buffer used for binary data, such as images
-			   	//NOTE: Use ONLY for images, html cannot be sent in binary.
-char *httpHeader;		//Buffer holding the http response header, append before sending data over http
+						//NOTE: Use ONLY for images, html cannot be sent in binary.
+*/
+char *httpResponse;		//Buffer holding the http response header, append before sending data over http
 
 /// @brief Logs errors, prints a user message to stderr
 /// @param message The message
@@ -82,48 +84,73 @@ void printServerIP(int localFileDesc)
 }
 
 
-int getFileExtentionIndex(char *pathToFile)
+char *getFileExtention(char *pathToFile)
 {
 	return strrchr(pathToFile, '.');
 }
 
-
-void getFile(char *filename)	//Puts file on either the binary or char buffer based on suffixes
-				//TODO Learn regex and pattern-match based on suffix
+void getFile(char *filename)    //Puts file on either the binary or char buffer based on suffixes
+                                //TODO Learn regex and pattern-match based on suffix
 {
-	FILE *docPointer;
-	char *buffer;
-	char *extention = strrchr(filename, '.');
-	int readcounter=0;
-	buffer = malloc(BUFFERSIZE);
-	docPointer = fopen(filename, "r");
-	if(docPointer == NULL)
-	{
-		throwErr("404 File not Found!\n", __LINE__);
-	}
-	if(strcmp(extention, "html") == 0)
-	{
-		while(fgets(buffer, sizeof(char)*BUFFERSIZE, docPointer) != NULL)
-		{
-			if(readcounter==0)
-			{
-				content = malloc(strlen(buffer)*sizeof(char));
-				strcpy(content, buffer);
-				readcounter++;
-				continue;
-			}
-			content = realloc(content,strlen(content)*sizeof(char)+1+strlen(buffer)*sizeof(char));
-			strcat(content, buffer);
-			readcounter++;
-		}
-	}
-	if((strcmp(extention, "jpg") == 0) || (strcmp(extention, "png")==0) || (strcmp(extention, "webp")==0))
-	{
-		
-	}
-	free(buffer);
-	//TODO Make dynamic, supporting binary encodings and switching buffer according
+        FILE *docPointer;
+        char *buffer;
+        char *extention = strrchr(filename, '.');
+        int readcounter=0;
+		buffer = calloc(BUFFERSIZE, sizeof(char));
+        docPointer = fopen(filename, "r");
+        if(docPointer == NULL)
+        {
+                throwErr("404 File not Found!\n", __LINE__);
+        }
+        while(fread(buffer, sizeof(char),1, docPointer) > 0)
+        {
+                if(readcounter==0)
+                {
+                        content = malloc(strlen(buffer)*sizeof(char));
+                        strcpy(content, buffer);
+                        readcounter++;
+                        continue;
+                }
+                content = realloc(content,strlen(content)*sizeof(char)+1+strlen(buffer)*sizeof(char));
+                strcat(content, buffer);
+                readcounter++;
+        }
+        free(buffer);
+        //TODO Make dynamic, supporting binary encodings and switching buffer according
 }
+void buildResponse(char *filePath)
+{
+	getFile(filePath);
+	printf("%s", content);
+	if(content == NULL)
+	{
+		throwErr("content failed", __LINE__);
+	}
+	/*if(httpResponse!=NULL)
+	{
+		free(httpResponse);
+	}*/
+	char *extention = getFileExtention(filePath);
+	char *buffer = malloc((strlen(content) + 300 + 1) * sizeof(char));
+	if(strcmp(extention, "html")==0)
+	{
+		sprintf(buffer, "HTTP/1.1 200 OK\r\nContent-type: text/html\r\nContent-lenght: %ld\r\nConnection: keep-alive\r\n\r\n%s", strlen(content+1), content);
+		printf("%s", buffer);
+	}
+	else if(strcmp(extention, "jpg")==0)
+	{
+		sprintf(buffer, "HTTP/1.1 200 OK\r\nContent-type: image/jpg\r\nContent-lenght: %ld\r\nConnection: keep-alive\r\n\r\n%s",strlen(content+1), content);
+		printf("%s", buffer);
+	}
+	httpResponse = malloc(strlen(buffer)*sizeof(char));
+	sprintf(httpResponse, "%s", buffer);
+	free(content);
+	free(buffer);
+	
+	printf("%s", httpResponse);
+}
+
+
 
 /*	WARNING: DEPRECATED
 void buildHeader(char *filetype, char *filename, char *requestType)
@@ -181,7 +208,7 @@ int main(int argc, char *argv[])
 		throwErr("Listen failed.", __LINE__);
 	}
 	debugPrint("Server listening, socket + bind success.");
-	printServerIP();	//Prints the server IP
+	printServerIP(localFileDesc);	//Prints the server IP
 	while(1)
 	{
 		int incomingFileDesc,n;
@@ -202,7 +229,9 @@ int main(int argc, char *argv[])
 			printf("Connection ACC.\n");
 		}
 		printf("\e[0;37m""%s"  "\e[0m", receivedRequest);	//Prints out the incoming request
-		send(incomingFileDesc, content, strlen(content), 0); 	//TODO Refactor
+		buildResponse("h.html");
+		printf("%s", httpResponse);
+		send(incomingFileDesc, httpResponse, strlen(httpResponse), 0); 	//TODO Refactor
 								     	//Currently brute-forces the html doc
 		n++;
 	}
