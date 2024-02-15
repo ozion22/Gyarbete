@@ -10,7 +10,7 @@
 #define PORT 8080
 #define BUFFERSIZE 10000
 
-#define HTTP_OK "200"
+#define HTTP_OK "HTTP/1.1 200 OK"
 #define HTTP_NOTFOUND "404"
 #define HTTP_VERSION "HTTP/1.1"
 #define HTTP_GET 1
@@ -81,12 +81,12 @@ void printServerIP(int localFileDesc)
     	}
 }
 
-
+/*
 int getFileExtentionIndex(char *pathToFile)
 {
 	return strrchr(pathToFile, '.');
 }
-
+*/
 
 void getFile(char *filename)	//Puts file on either the binary or char buffer based on suffixes
 				//TODO Learn regex and pattern-match based on suffix
@@ -95,31 +95,24 @@ void getFile(char *filename)	//Puts file on either the binary or char buffer bas
 	char *buffer;
 	char *extention = strrchr(filename, '.');
 	int readcounter=0;
-	buffer = malloc(BUFFERSIZE);
+	buffer = malloc(sizeof(char));
 	docPointer = fopen(filename, "r");
 	if(docPointer == NULL)
 	{
 		throwErr("404 File not Found!\n", __LINE__);
 	}
-	if(strcmp(extention, "html") == 0)
+	while(fread(buffer, sizeof(char),1, docPointer) > 0)
 	{
-		while(fgets(buffer, sizeof(char)*BUFFERSIZE, docPointer) != NULL)
+		if(readcounter==0)
 		{
-			if(readcounter==0)
-			{
-				content = malloc(strlen(buffer)*sizeof(char));
-				strcpy(content, buffer);
-				readcounter++;
-				continue;
-			}
-			content = realloc(content,strlen(content)*sizeof(char)+1+strlen(buffer)*sizeof(char));
-			strcat(content, buffer);
+			content = malloc(strlen(buffer)*sizeof(char));
+			strcpy(content, buffer);
 			readcounter++;
+			continue;
 		}
-	}
-	if((strcmp(extention, "jpg") == 0) || (strcmp(extention, "png")==0) || (strcmp(extention, "webp")==0))
-	{
-		
+		content = realloc(content,strlen(content)*sizeof(char)+1+strlen(buffer)*sizeof(char));
+		strcat(content, buffer);
+		readcounter++;
 	}
 	free(buffer);
 	//TODO Make dynamic, supporting binary encodings and switching buffer according
@@ -181,7 +174,7 @@ int main(int argc, char *argv[])
 		throwErr("Listen failed.", __LINE__);
 	}
 	debugPrint("Server listening, socket + bind success.");
-	printServerIP();	//Prints the server IP
+	printServerIP(localFileDesc);	//Prints the server IP
 	while(1)
 	{
 		int incomingFileDesc,n;
@@ -202,8 +195,8 @@ int main(int argc, char *argv[])
 			printf("Connection ACC.\n");
 		}
 		printf("\e[0;37m""%s"  "\e[0m", receivedRequest);	//Prints out the incoming request
-		send(incomingFileDesc, content, strlen(content), 0); 	//TODO Refactor
-								     	//Currently brute-forces the html doc
+		//send(incomingFileDesc, content, strlen(content), 0); 	//TODO Refactor
+		send(incomingFileDesc, strcat("HTTP/1.1 200 OK\r\ncontent-type:image/jpeg\r\ncontent-lenght:100000000", content), 100000000000, 0);						     	//Currently brute-forces the html doc
 		n++;
 	}
 	return 0;
