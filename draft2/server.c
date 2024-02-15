@@ -89,6 +89,11 @@ char *getFileExtention(char *pathToFile)
 	return strrchr(pathToFile, '.');
 }
 
+char *getPath(char *request)
+{
+	return strrchr(request, ' ');
+}
+
 void getFile(char *filename)    //Puts file on either the binary or char buffer based on suffixes
                                 //TODO Learn regex and pattern-match based on suffix
 {
@@ -132,12 +137,12 @@ void buildResponse(char *filePath)
 	}*/
 	char *extention = getFileExtention(filePath);
 	char *buffer = malloc((strlen(content) + 300 + 1) * sizeof(char));
-	if(strcmp(extention, "html")==0)
+	if(strcmp(extention, ".html")==0)
 	{
 		sprintf(buffer, "HTTP/1.1 200 OK\r\nContent-type: text/html\r\nContent-lenght: %ld\r\nConnection: keep-alive\r\n\r\n%s", strlen(content+1), content);
 		printf("%s", buffer);
 	}
-	else if(strcmp(extention, "jpg")==0)
+	else if(strcmp(extention, ".jpg")==0)
 	{
 		sprintf(buffer, "HTTP/1.1 200 OK\r\nContent-type: image/jpg\r\nContent-lenght: %ld\r\nConnection: keep-alive\r\n\r\n%s",strlen(content+1), content);
 		printf("%s", buffer);
@@ -146,8 +151,6 @@ void buildResponse(char *filePath)
 	sprintf(httpResponse, "%s", buffer);
 	free(content);
 	free(buffer);
-	
-	printf("%s", httpResponse);
 }
 
 
@@ -218,19 +221,31 @@ int main(int argc, char *argv[])
 		int incomingLenght=sizeof(incomingAdress);
 		printf("Waiting for connection... %d\n", n);
 		incomingFileDesc=accept(localFileDesc, (struct sockaddr *) &incomingAdress, (socklen_t *)&incomingLenght);	//Accepts incoming connections
-																//Minds to incomingFileDesc
-		read(incomingFileDesc, receivedRequest, BUFFERSIZE-1);	//Reads the data received into the receivedRequest buffer
 		if(incomingFileDesc < 0)
 		{
 			printf("Acc. Fail");
+			continue;
 		}
 		else
 		{
 			printf("Connection ACC.\n");
 		}
+		read(incomingFileDesc, receivedRequest, BUFFERSIZE-1);	//Reads the data received into the receivedRequest buffer
+		char *path;
+		char *token = strtok(receivedRequest, " \t\n");
+		while (token != NULL) {
+            if (strcmp(token, "GET") == 0) {
+                // The next token after "GET" is the path
+                token = strtok(NULL, " \t\n");
+                if (token != NULL) {
+                    path = token;
+                    break;
+                }
+            }
+            token = strtok(NULL, " \t\n");
+        }
+		printf("Path: %s", path);
 		printf("\e[0;37m""%s"  "\e[0m", receivedRequest);	//Prints out the incoming request
-		buildResponse("h.html");
-		printf("%s", httpResponse);
 		send(incomingFileDesc, httpResponse, strlen(httpResponse), 0); 	//TODO Refactor
 								     	//Currently brute-forces the html doc
 		n++;
