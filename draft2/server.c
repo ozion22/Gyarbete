@@ -16,10 +16,6 @@
 #define HTTP_GET 1
 
 char *content;			//The buffer used for text-type data, mostly html 
-/*
-int *binBuffer; 		//The buffer used for binary data, such as images
-						//NOTE: Use ONLY for images, html cannot be sent in binary.
-*/
 char *httpResponse;		//Buffer holding the http response header, append before sending data over http
 
 /// @brief Logs errors, prints a user message to stderr
@@ -69,6 +65,8 @@ void printErr(const char message[], int line, bool supressLog)
 	}
 }
 
+/// @brief Prints the ServerIP to the console
+/// @param localFileDesc The file descriptor of the server
 void printServerIP(int localFileDesc)
 {
 
@@ -94,12 +92,10 @@ char *getPath(char *request)
 	return strrchr(request, ' ');
 }
 
-void getFile(char *filename)    //Puts file on either the binary or char buffer based on suffixes
-                                //TODO Learn regex and pattern-match based on suffix
+void getFile(char *filename)    //Puts file on response buffer 
 {
         FILE *docPointer;
-        char *buffer;
-        char *extention = strrchr(filename, '.');
+        unsigned char *buffer;
         int readcounter=0;
 		buffer = calloc(BUFFERSIZE, sizeof(char));
         docPointer = fopen(filename, "r");
@@ -111,12 +107,12 @@ void getFile(char *filename)    //Puts file on either the binary or char buffer 
         {
                 if(readcounter==0)
                 {
-                        content = malloc(strlen(buffer)*sizeof(char));
+                        content = malloc(strlen(buffer)*sizeof(unsigned char));
                         strcpy(content, buffer);
                         readcounter++;
                         continue;
                 }
-                content = realloc(content,strlen(content)*sizeof(char)+1+strlen(buffer)*sizeof(char));
+                content = realloc(content,strlen(content)*sizeof(unsigned char)+1+strlen(buffer)*sizeof(unsigned char));
                 strcat(content, buffer);
                 readcounter++;
         }
@@ -136,13 +132,13 @@ void buildResponse(char *filePath)
 		free(httpResponse);
 	}*/
 	char *extention = getFileExtention(filePath);
-	char *buffer = malloc((strlen(content) + 300 + 1) * sizeof(char));
-	if(strcmp(extention, ".html")==0)
+	unsigned char *buffer = malloc((strlen(content) + 300 + 1) * sizeof(char));
+	if(strcmp(extention, ".html")==0) //Html header
 	{
 		sprintf(buffer, "HTTP/1.1 200 OK\r\nContent-type: text/html\r\nContent-lenght: %ld\r\nConnection: keep-alive\r\n\r\n%s", strlen(content+1), content);
 		printf("%s", buffer);
 	}
-	else if(strcmp(extention, ".jpg")==0)
+	else if(strcmp(extention, ".jpg")==0) //JPG header
 	{
 		sprintf(buffer, "HTTP/1.1 200 OK\r\nContent-type: image/jpg\r\nContent-lenght: %ld\r\nConnection: keep-alive\r\n\r\n%s",strlen(content+1), content);
 		printf("%s", buffer);
@@ -234,20 +230,25 @@ int main(int argc, char *argv[])
 		char *path;
 		char *token = strtok(receivedRequest, " \t\n");
 		while (token != NULL) {
-            if (strcmp(token, "GET") == 0) {
-                // The next token after "GET" is the path
-                token = strtok(NULL, " \t\n");
-                if (token != NULL) {
-                    path = token;
-                    break;
-                }
-            }
-            token = strtok(NULL, " \t\n");
-        }
+			if (strcmp(token, "GET") == 0) {
+			// The next token after GET is the path
+				token = strtok(NULL, " \t\n");
+				if 	(token != NULL) {
+					path = token;
+					break;
+				}
+			} 	
+			else {
+				// If "GET" is not present, assign the path to the first token
+				path = token;
+				break;
+			}
+			token = strtok(NULL, " \t\n");
+		}
 		printf("Path: %s", path);
 		printf("\e[0;37m""%s"  "\e[0m", receivedRequest);	//Prints out the incoming request
+		buildResponse(path);
 		send(incomingFileDesc, httpResponse, strlen(httpResponse), 0); 	//TODO Refactor
-								     	//Currently brute-forces the html doc
 		n++;
 	}
 	return 0;

@@ -225,6 +225,7 @@ char *getPath(char *request, char *defaultPath)
 	if (methodStart == NULL)
 	{
 		printf("Failed to find GET, defaulting to %s\n", defaultPath);
+		//methodStart = strstr()
 		return defaultPath;
 	}
 
@@ -346,6 +347,8 @@ int main(int argc, char *argv[])
 		{
 			printf("Path was empty, or fnf\n");
 			buildResponse("h.html", localFileDesc);
+			//send404(incomingFileDesc);
+			continue;
 		}
 		else
 		{

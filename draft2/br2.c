@@ -21,7 +21,7 @@ char *content;			//The buffer used for text-type data, mostly html
 int *binBuffer; 		//The buffer used for binary data, such as images
 						//NOTE: Use ONLY for images, html cannot be sent in binary.
 */
-char *httpResponse;		//Buffer holding the http response header, append before sending data over http
+unsigned char *httpResponse;		//Buffer holding the http response header, append before sending data over http
 
 char *getFileExtention(char *pathToFile)
 {
@@ -75,10 +75,6 @@ void buildResponse(char *filePath)
 	{
 		printf("content failed\n");
 	}
-	/*if(httpResponse!=NULL)
-	{
-		free(httpResponse);
-	}*/
 	char *extention = getFileExtention(filePath);
 	char *responseBuffer = calloc((strlen(content) + 300 + 1), sizeof(char));
 	printf("Allocated:%ld, size: %ld",strlen(content) + 300 + 1, sizeof(responseBuffer)*strlen(responseBuffer));
